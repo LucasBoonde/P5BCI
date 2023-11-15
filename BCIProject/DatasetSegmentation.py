@@ -67,6 +67,7 @@ så vi senere kan predicte om det er en action eller ej"""
 
 fs = 250
 nbSec = 4
+TrialDuration = fs*nbSec
 nbTrials = 48
 #Trials pr class pr run = 12
 #Total amount of runs = 12
@@ -95,11 +96,13 @@ if 'stim' in raw.ch_names:
     threshold = 0
 
     x = 0
-    for y in stim_channel_values:
+    """for y in stim_channel_values:
         if y != threshold:
             print(x/fs)
+            for trial in nbElectrodes:
+                Trials[i,ch,x:TrialDuration]
             i +=1
-        x+=1
+        x+=1"""
 
     print("Number of Stims: ", i)
     events = mne.find_events(raw, stim_channel='stim', verbose=True)
@@ -114,6 +117,13 @@ if 'stim' in raw.ch_names:
 
 else:
     print("The 'stim' channel is not present in the data.")
+
+
+if 'stim' in raw.ch_names:
+    stim_channel_data = raw.copy().pick_channels(['Fz'])
+    #print(stim_channel_data.get_data([0]))
+    trailArray = stim_channel_data.get_data([0][250:1000])
+    print(trailArray)
 
 
 
