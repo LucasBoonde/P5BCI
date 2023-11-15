@@ -44,8 +44,8 @@ run_name = "0"
 #
 
 raw = sessions[subject][session_name][run_name]
-raw.plot(n_channels=len(raw.ch_names), title='EEG data - Subject {}, Session {}, Run {}'.format(subject, session_name, run_name))
-plt.show()
+#raw.plot(n_channels=len(raw.ch_names), title='EEG data - Subject {}, Session {}, Run {}'.format(subject, session_name, run_name))
+#plt.show()
 ###
 
 
@@ -55,10 +55,10 @@ plt.show()
 #For only filtering specific channels:
 #channel_to_filter = 'Fz'
 
-raw.filter(l_freq=0.5, h_freq=30, filter_length='auto', phase='zero')
-raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
+#raw.filter(l_freq=0.5, h_freq=30, filter_length='auto', phase='zero')
+#raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
 
-plt.show()
+#plt.show()
 
 
 #Extracting Individual Trials
@@ -76,7 +76,7 @@ nbElectrodes = 22
 nbSubjects = 10
 
 #len(raw.ch_names)-4 fordi vi kun bruger EEG Channels, men kan ændres senere.
-Trials = np.zeros((nbTrials, len(raw.ch_names)-4, nbSecs*fs))
+Trials = np.zeros((nbTrials, len(raw.ch_names)-4, nbSec*fs))
 Class = np.zeros((nbTrials, 1))
 
 
@@ -96,37 +96,60 @@ if 'stim' in raw.ch_names:
     threshold = 0
 
     x = 0
-    """for y in stim_channel_values:
+    z = 0
+    Arr2D = np.zeros([len(raw.ch_names) - 4, nbSec * fs])
+
+    for y in stim_channel_values:
+
         if y != threshold:
-            print(x/fs)
-            for trial in nbElectrodes:
-                Trials[i,ch,x:TrialDuration]
+            #print(x/fs)
+            for z in range(nbElectrodes):
+                currentChannel = raw.ch_names[z]
+                trialData = raw.copy().pick_channels([currentChannel])
+                channelData = trialData.get_data(start=x, stop=x+(nbSec * fs))
+                #print("Data From: ", currentChannel)
+                #print("Electrode: ", z+1)
+                #print("From X value", x)
+                #print("Current Stim", i + 1)
+                #print("--------------------- NEXT ---------------------")
+                #print(channelData.shape)
+                #print("Arr2D", Arr2D.shape)
+                # Use ':' instead of '(z, :)' for indexing
+                Arr2D[z, :] = channelData
+                #print(Arr2D)
+            Trials[i, :, :] = Arr2D
             i +=1
-        x+=1"""
+        x+=1
 
-    print("Number of Stims: ", i)
-    events = mne.find_events(raw, stim_channel='stim', verbose=True)
-    tmin = 0.0
-    tmax = 4.0
-    epochs = mne.Epochs(raw, events, event_id=None, tmin=tmin, tmax=tmax, baseline=None, detrend=1, preload=True)
+    #print(Trials)
 
-    epochs.plot(picks='eeg', n_channels=len(raw.ch_names), title='EEG data around stimulus event')
+    # Plotting the first trial
+    trial_to_plot = 0
 
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Extracting x, y, and z coordinates from Trials
+    x = range(nbSec * fs)
+    y = range(len(raw.ch_names) - 4)
+    X, Y = np.meshgrid(x, y)
+    Z = Trials[trial_to_plot, :, :]
+
+    # Plotting the surface
+    ax.plot_surface(X, Y, Z, cmap='viridis')
+
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Electrodes')
+    ax.set_zlabel('Amplitude')
+
+    plt.title(f'Trial {trial_to_plot + 1}')
     plt.show()
+
+    #Trials = Trials[1:i,:,:]
 
 
 else:
     print("The 'stim' channel is not present in the data.")
-
-
-if 'stim' in raw.ch_names:
-    stim_channel_data = raw.copy().pick_channels(['Fz'])
-    #print(stim_channel_data.get_data([0]))
-    trailArray = stim_channel_data.get_data([0][250:1000])
-    print(trailArray)
-
-
-
 
 
 
