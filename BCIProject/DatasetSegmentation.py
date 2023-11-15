@@ -44,8 +44,8 @@ run_name = "0"
 #
 
 raw = sessions[subject][session_name][run_name]
-#raw.plot(n_channels=len(raw.ch_names), title='EEG data - Subject {}, Session {}, Run {}'.format(subject, session_name, run_name))
-#plt.show()
+raw.plot(n_channels=len(raw.ch_names), title='EEG data - Subject {}, Session {}, Run {}'.format(subject, session_name, run_name))
+plt.show()
 ###
 
 
@@ -56,9 +56,9 @@ raw = sessions[subject][session_name][run_name]
 #channel_to_filter = 'Fz'
 
 raw.filter(l_freq=0.5, h_freq=30, filter_length='auto', phase='zero')
-#raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
+raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
 
-#plt.show()
+plt.show()
 
 
 #Extracting Individual Trials
@@ -84,6 +84,8 @@ Cov = np.zeros((nbTrials, nbSubjects, nbElectrodes))
 i = 0
 #for trial in range(nbTrials):
 
+
+
 # Check if 'stim' channel exists in the data
 if 'stim' in raw.ch_names:
     stim_channel_data = raw.copy().pick_channels(['stim'])
@@ -91,22 +93,28 @@ if 'stim' in raw.ch_names:
     # Extract the values from the 'stim' channel
     stim_channel_values = stim_channel_data.get_data()[0]
     threshold = 0
-    stimTimes = np.zeros((48,1))
 
     x = 0
     for y in stim_channel_values:
         if y != threshold:
-
             print(x/fs)
             i +=1
         x+=1
 
     print("Number of Stims: ", i)
-    plt.plot(stim_channel_data.times[stimTimes[0]], stimTimes[1], 'ro',
-             label='Above Threshold')
+    events = mne.find_events(raw, stim_channel='stim', verbose=True)
+    tmin = 0.0
+    tmax = 4.0
+    epochs = mne.Epochs(raw, events, event_id=None, tmin=tmin, tmax=tmax, baseline=None, detrend=1, preload=True)
+
+    epochs.plot(picks='eeg', n_channels=len(raw.ch_names), title='EEG data around stimulus event')
+
     plt.show()
+
+
 else:
     print("The 'stim' channel is not present in the data.")
+
 
 
 
