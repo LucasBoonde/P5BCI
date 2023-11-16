@@ -20,6 +20,8 @@ from moabb.paradigms import LeftRightImagery
 
 np.set_printoptions(threshold=sys.maxsize)
 
+
+
 moabb.set_log_level("info")
 warnings.filterwarnings("ignore")
 
@@ -44,10 +46,10 @@ run_name = "0"
 #
 
 raw = sessions[subject][session_name][run_name]
-#raw.plot(n_channels=len(raw.ch_names), title='EEG data - Subject {}, Session {}, Run {}'.format(subject, session_name, run_name))
-#plt.show()
-###
+raw.plot(n_channels=len(raw.ch_names), title='EEG data - Subject {}, Session {}, Run {}'.format(subject, session_name, run_name))
+plt.show()
 
+#Kan finde alle events / stims og fortælle ved hvilket sample de kommer ved
 
 
 #Bandpass Filtering:
@@ -55,10 +57,11 @@ raw = sessions[subject][session_name][run_name]
 #For only filtering specific channels:
 #channel_to_filter = 'Fz'
 
-#raw.filter(l_freq=0.5, h_freq=30, filter_length='auto', phase='zero')
-#raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
+#Ved ikke om dette ændrer data senere i for-loopet, eller om man bare bruger raw data igen?
+raw.filter(l_freq=0.5, h_freq=30, filter_length='auto', phase='zero')
+raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
 
-#plt.show()
+plt.show()
 
 
 #Extracting Individual Trials
@@ -80,7 +83,7 @@ Trials = np.zeros((nbTrials, len(raw.ch_names)-4, nbSec*fs))
 Class = np.zeros((nbTrials, 1))
 
 
-Cov = np.zeros((nbTrials, nbSubjects, nbElectrodes))
+Cov = np.zeros((nbTrials, nbElectrodes, nbElectrodes))
 
 i = 0
 #for trial in range(nbTrials):
@@ -99,10 +102,13 @@ if 'stim' in raw.ch_names:
     z = 0
     Arr2D = np.zeros([len(raw.ch_names) - 4, nbSec * fs])
 
+    events, _ = mne.events_from_annotations(raw)
+
     for y in stim_channel_values:
 
         if y != threshold:
             #print(x/fs)
+
             for z in range(nbElectrodes):
                 currentChannel = raw.ch_names[z]
                 trialData = raw.copy().pick_channels([currentChannel])
@@ -114,44 +120,44 @@ if 'stim' in raw.ch_names:
                 #print("--------------------- NEXT ---------------------")
                 #print(channelData.shape)
                 #print("Arr2D", Arr2D.shape)
-                # Use ':' instead of '(z, :)' for indexing
                 Arr2D[z, :] = channelData
                 #print(Arr2D)
+            event_sample = events[i]
+            stim_value = raw.copy().pick_channels(['stim']).get_data()[0][event_sample]
             Trials[i, :, :] = Arr2D
+            Class[i] = stim_value[0]
+            Cov[i, :, :] = np.cov(Arr2D[:, x:x+(nbSec * fs)].T)
             i +=1
         x+=1
 
-    #print(Trials)
-
+    print("COVARIANCE MATRIX: ", Cov )
     # Plotting the first trial
-    trial_to_plot = 0
+    #trial_to_plot = 0
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+   # fig = plt.figure()
+    #ax = fig.add_subplot(111, projection='3d')
 
     # Extracting x, y, and z coordinates from Trials
-    x = range(nbSec * fs)
-    y = range(len(raw.ch_names) - 4)
-    X, Y = np.meshgrid(x, y)
-    Z = Trials[trial_to_plot, :, :]
+    #x = range(nbSec * fs)
+    #y = range(len(raw.ch_names) - 4)
+    #X, Y = np.meshgrid(x, y)
+    #Z = Trials[trial_to_plot, :, :]
 
     # Plotting the surface
-    ax.plot_surface(X, Y, Z, cmap='viridis')
+    #ax.plot_surface(X, Y, Z, cmap='viridis')
 
-    ax.set_xlabel('Time (s)')
-    ax.set_ylabel('Electrodes')
-    ax.set_zlabel('Amplitude')
+    #ax.set_xlabel('Time (s)')
+    #ax.set_ylabel('Electrodes')
+    #ax.set_zlabel('Amplitude')
 
-    plt.title(f'Trial {trial_to_plot + 1}')
-    plt.show()
+    #plt.title(f'Trial {trial_to_plot + 1}')
+    #plt.show()
 
     #Trials = Trials[1:i,:,:]
 
 
 else:
     print("The 'stim' channel is not present in the data.")
-
-
 
 
 
