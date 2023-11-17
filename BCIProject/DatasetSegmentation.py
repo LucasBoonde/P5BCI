@@ -91,77 +91,112 @@ i = 0
 
 
 # Check if 'stim' channel exists in the data
-if 'stim' in raw.ch_names:
-    stim_channel_data = raw.copy().pick_channels(['stim'])
 
-    # Extract the values from the 'stim' channel
-    stim_channel_values = stim_channel_data.get_data()[0]
-    threshold = 0
+stim_channel_data = raw.copy().pick_channels(['stim'])
 
-    x = 0
-    z = 0
-    Arr2D = np.zeros([len(raw.ch_names) - 4, nbSec * fs])
+# Extract the values from the 'stim' channel
+stim_channel_values = stim_channel_data.get_data()[0]
+threshold = 0
 
-    events, _ = mne.events_from_annotations(raw)
+x = 0
+z = 0
+Arr2D = np.zeros([len(raw.ch_names) - 4, nbSec * fs])
 
-    for y in stim_channel_values:
+events, _ = mne.events_from_annotations(raw)
 
-        if y != threshold:
-            #print(x/fs)
+for y in stim_channel_values:
 
-            for z in range(nbElectrodes):
-                currentChannel = raw.ch_names[z]
-                trialData = raw.copy().pick_channels([currentChannel])
-                channelData = trialData.get_data(start=x, stop=x+(nbSec * fs))
-                #print("Data From: ", currentChannel)
-                #print("Electrode: ", z+1)
-                #print("From X value", x)
-                #print("Current Stim", i + 1)
-                #print("--------------------- NEXT ---------------------")
-                #print(channelData.shape)
-                #print("Arr2D", Arr2D.shape)
-                Arr2D[z, :] = channelData
-                #print(Arr2D)
-            event_sample = events[i]
-            stim_value = raw.copy().pick_channels(['stim']).get_data()[0][event_sample]
-            Trials[i, :, :] = Arr2D
-            Class[i] = stim_value[0]
-            Cov[i, :, :] = np.cov(Arr2D[:, x:x+(nbSec * fs)].T)
-            i +=1
-        x+=1
+    if y != threshold:
+        #print(x/fs)
+        for z in range(nbElectrodes):
+            currentChannel = raw.ch_names[z]
+            trialData = raw.copy().pick_channels([currentChannel])
+            channelData = trialData.get_data(start=x, stop=x+(nbSec * fs))
+            #print("Data From: ", currentChannel)
+            #print("Electrode: ", z+1)
+            #print("From X value", x)
+            #print("Current Stim", i + 1)
+            #print("--------------------- NEXT ---------------------")
+            #print(channelData.shape)
+            #print("Arr2D", Arr2D.shape)
+            Arr2D[z, :] = channelData
+            #print(Arr2D)
+        event_sample = events[i]
+        stim_value = raw.copy().pick_channels(['stim']).get_data()[0][event_sample]
+        Trials[i, :, :] = Arr2D
+        Class[i] = stim_value[0]
+        Cov[i, :, :] = np.cov(Arr2D[:, x:(x + (nbSec * fs))])
+        i +=1
+    x+=1
 
-    print("COVARIANCE MATRIX: ", Cov )
-    # Plotting the first trial
-    #trial_to_plot = 0
+#Class = Class[1:i]
+print("COVARIANCE MATRIX: ", Cov.shape)
+# Plotting the first trial
+#trial_to_plot = 0
 
-   # fig = plt.figure()
-    #ax = fig.add_subplot(111, projection='3d')
+# fig = plt.figure()
+#ax = fig.add_subplot(111, projection='3d')
 
-    # Extracting x, y, and z coordinates from Trials
-    #x = range(nbSec * fs)
-    #y = range(len(raw.ch_names) - 4)
-    #X, Y = np.meshgrid(x, y)
-    #Z = Trials[trial_to_plot, :, :]
+# Extracting x, y, and z coordinates from Trials
+#x = range(nbSec * fs)
+#y = range(len(raw.ch_names) - 4)
+#X, Y = np.meshgrid(x, y)
+#Z = Trials[trial_to_plot, :, :]
 
-    # Plotting the surface
-    #ax.plot_surface(X, Y, Z, cmap='viridis')
+# Plotting the surface
+#ax.plot_surface(X, Y, Z, cmap='viridis')
 
-    #ax.set_xlabel('Time (s)')
-    #ax.set_ylabel('Electrodes')
-    #ax.set_zlabel('Amplitude')
+#ax.set_xlabel('Time (s)')
+#ax.set_ylabel('Electrodes')
+#ax.set_zlabel('Amplitude')
 
-    #plt.title(f'Trial {trial_to_plot + 1}')
-    #plt.show()
+#plt.title(f'Trial {trial_to_plot + 1}')
+#plt.show()
 
-    #Trials = Trials[1:i,:,:]
+#Trials = Trials[1:i,:,:]
 
+## COMMON SPATIAL PATTERN (CSP)
 
-else:
-    print("The 'stim' channel is not present in the data.")
+#Cov = Cov[1:i, :,:]
+print("Cov Shape: ", Cov.shape)
 
+C_l = np.squeeze(np.mean(Cov[Class == 1, :, :], axis=0))
+C_r = np.sqeez(Cov[Class == 2, :, :], axis=0)
+C_combined = C_l + C_r
 
+V, D = np.linalg.eig(C_l @ np.linalg.pinv(C_combined))
+d, ind = np.argsort(np.diag(D))
+Vs = V[:, ind]
+W_left = Vs[:, 0].T
+W_right = Vs[:, -1].T
 
+#For Tongue and Feet
+#C_f = np.mean(Cov[Class == 3, :, :], axis=0)
+#C_f = np.squeeze(C_f)
+#C_t = np.mean(Cov[Class == 4, :, :], axis=0)
+#C_t = np.squeeze(C_t)
 
+[V,D] = np.linalg.eig(C_l @ np.linalg.pinv(C_combined))
+d, ind = np.sort(np.diag(D))
+Vs = V[:, ind]
+W_left = Vs[:, 0]
+W_right = Vs[:, -1]
+
+W_left = np.random.rand(22)
+W_right = np.random.rand(22)
+
+# Plot the CSP features
+plt.figure(figsize=(12, 6))
+plt.subplot(1, 2, 1)
+plt.bar(range(len(W_left)), W_left)
+plt.title('CSP Feature - Left Class')
+
+plt.subplot(1, 2, 2)
+plt.bar(range(len(W_right)), W_right)
+plt.title('CSP Feature - Right Class')
+
+plt.tight_layout()
+plt.show()
 
 
 
