@@ -160,44 +160,21 @@ print("COVARIANCE MATRIX: ", Cov.shape)
 #Cov = Cov[1:i, :,:]
 print("Cov Shape: ", Cov.shape)
 
-C_l = np.squeeze(np.mean(Cov[Class == 1, :, :], axis=0))
-C_r = np.sqeez(Cov[Class == 2, :, :], axis=0)
-C_combined = C_l + C_r
+#C_l = np.squeeze(np.mean(Cov[Class == 1, :, :], axis=0))
+#C_r = np.sqeez(Cov[Class == 2, :, :], axis=0)
+#C_combined = C_l + C_r
 
-V, D = np.linalg.eig(C_l @ np.linalg.pinv(C_combined))
-d, ind = np.argsort(np.diag(D))
-Vs = V[:, ind]
-W_left = Vs[:, 0].T
-W_right = Vs[:, -1].T
+#V, D = np.linalg.eig(C_l @ np.linalg.pinv(C_combined))
+#d, ind = np.argsort(np.diag(D))
+#Vs = V[:, ind]
+#W_left = Vs[:, 0].T
+#W_right = Vs[:, -1].T
 
 #For Tongue and Feet
 #C_f = np.mean(Cov[Class == 3, :, :], axis=0)
 #C_f = np.squeeze(C_f)
 #C_t = np.mean(Cov[Class == 4, :, :], axis=0)
 #C_t = np.squeeze(C_t)
-
-[V,D] = np.linalg.eig(C_l @ np.linalg.pinv(C_combined))
-d, ind = np.sort(np.diag(D))
-Vs = V[:, ind]
-W_left = Vs[:, 0]
-W_right = Vs[:, -1]
-
-W_left = np.random.rand(22)
-W_right = np.random.rand(22)
-
-# Plot the CSP features
-plt.figure(figsize=(12, 6))
-plt.subplot(1, 2, 1)
-plt.bar(range(len(W_left)), W_left)
-plt.title('CSP Feature - Left Class')
-
-plt.subplot(1, 2, 2)
-plt.bar(range(len(W_right)), W_right)
-plt.title('CSP Feature - Right Class')
-
-plt.tight_layout()
-plt.show()
-
 
 
 
