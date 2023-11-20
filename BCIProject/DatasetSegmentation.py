@@ -124,13 +124,16 @@ for y in stim_channel_values:
         event_sample = events[i]
         stim_value = raw.copy().pick_channels(['stim']).get_data()[0][event_sample]
         Trials[i, :, :] = Arr2D
-        Class[i] = stim_value[0]
+        if stim_value[0] == 1:
+            Class[i] = stim_value[0]
+        else:
+            Class[i] = 2
         Cov[i, :, :] = np.cov(Arr2D[:, x:(x + (nbSec * fs))])
         i +=1
     x+=1
 
 #Class = Class[1:i]
-print("COVARIANCE MATRIX: ", Cov.shape)
+print("Class: ", Class)
 # Plotting the first trial
 #trial_to_plot = 0
 
