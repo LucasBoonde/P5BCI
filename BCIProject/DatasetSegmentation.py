@@ -18,10 +18,11 @@ from moabb.datasets import BNCI2014_001
 from moabb.evaluations import WithinSessionEvaluation
 from moabb.paradigms import LeftRightImagery
 
+#Just prints the whole array instead of [x, y, ... , x, y]
 np.set_printoptions(threshold=sys.maxsize)
 
 
-
+#%% --- Setup for MOABB ---
 moabb.set_log_level("info")
 warnings.filterwarnings("ignore")
 
@@ -29,7 +30,7 @@ warnings.filterwarnings("ignore")
 dataset = BNCI2014_001()
 dataset.subject_list[1]
 
-#Get data from given sesion
+#GENERAL INFORMATION FOR THE DATASET WE ARE USING
 #Number of Subjects = 10
 #Number of Channels = 22 + 3 EOG
 #Number og Classes = 4(rh, lh, feet, tongue)
@@ -37,25 +38,21 @@ dataset.subject_list[1]
 #Trials Length = 4sec
 #Sampling Rate = 250Hz
 #Sessions = 2
-sessions = dataset.get_data(subjects=[1])
 
+#%%--- Extracting data from a given dataset ---:
+
+sessions = dataset.get_data(subjects=[1])
 subject = 1
 session_name = "0train"
 run_name = "0"
 
-#
-
+#Get the raw data from all 22 channels and plots them
 raw = sessions[subject][session_name][run_name]
 raw.plot(n_channels=len(raw.ch_names), title='EEG data - Subject {}, Session {}, Run {}'.format(subject, session_name, run_name))
 plt.show()
 
-#Kan finde alle events / stims og fortælle ved hvilket sample de kommer ved
 
-
-#Bandpass Filtering:
-
-#For only filtering specific channels:
-#channel_to_filter = 'Fz'
+#%%--- Bandpass Filtering---:
 
 #Ved ikke om dette ændrer data senere i for-loopet, eller om man bare bruger raw data igen?
 raw.filter(l_freq=0.5, h_freq=30, filter_length='auto', phase='zero')
@@ -64,63 +61,70 @@ raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
 plt.show()
 
 
-#Extracting Individual Trials
-"""Hvert run har flere runs, og vi kan inddele dem i trials, 
+#%% --- Extracting Individual Trials ---
+"""Hver session har flere runs, og vi kan inddele dem i trials, 
 så vi senere kan predicte om det er en action eller ej"""
 
+"""A session can be divided into runs, and trials, each session consists of 12 runs, 
+and each run has 48 trial, 12 of each of the 4 classes."""
+
+#Sample rate:
 fs = 250
+#Seconds pr. trial:
 nbSec = 4
+#Samples pr. trial:
 TrialDuration = fs*nbSec
+#Amount of trial in one run:
 nbTrials = 48
-#Trials pr class pr run = 12
-#Total amount of runs = 12
+#Total amount of seconds for one run
 nbSecs = 385
 nbElectrodes = 22
 nbSubjects = 10
 
+#Trials pr class pr run = 12
+#Total amount of runs = 12
+
+#This matrix will be holding a 2D array for each of the 48 trials
 #len(raw.ch_names)-4 fordi vi kun bruger EEG Channels, men kan ændres senere.
 Trials = np.zeros((nbTrials, len(raw.ch_names)-4, nbSec*fs))
+#Defines what stim has been given to the subject
 Class = np.zeros((nbTrials, 1))
 
 
 Cov = np.zeros((nbTrials, nbElectrodes, nbElectrodes))
 
-i = 0
-#for trial in range(nbTrials):
 
-
-
-# Check if 'stim' channel exists in the data
-
+#Selects the Stim channel
 stim_channel_data = raw.copy().pick_channels(['stim'])
 
 # Extract the values from the 'stim' channel
 stim_channel_values = stim_channel_data.get_data()[0]
-threshold = 0
 
+threshold = 0
+i = 0
 x = 0
 z = 0
+
+#Creates a Numpy 2D array. 22x1000. 22 because of the EEG channels and 1000 is the samples extracted for each trial.
 Arr2D = np.zeros([len(raw.ch_names) - 4, nbSec * fs])
 
+#Checks when and what stim is given to the suspect
 events, _ = mne.events_from_annotations(raw)
 
-for y in stim_channel_values:
+"""This for-loop goes through all the samples for the stim channel,
+and jumps to the inside for-loop when a stim is given. 
+inside that loop it extracts 1000 samples of each of the 
+EEG channels, and puts them into a 3D array (Trials), 22x1000x48.
+In the final part of the loop Values are put into the Class matrix, defining what
+stim has been given and Cov matrix that will be used for Common Spatial Pattern"""
 
+for y in stim_channel_values:
     if y != threshold:
-        #print(x/fs)
         for z in range(nbElectrodes):
             currentChannel = raw.ch_names[z]
             trialData = raw.copy().pick_channels([currentChannel])
             channelData = trialData.get_data(start=x, stop=x+(nbSec * fs))
-            #print("Data From: ", currentChannel)
-            #print("Electrode: ", z+1)
-            #print("From X value", x)
-            #print("Current Stim", i + 1)
-            #print("--------------------- NEXT ---------------------")
-            #print(channelData.shape)
-            #print("Arr2D", Arr2D.shape)
             Arr2D[z, :] = channelData
-            #print(Arr2D)
         event_sample = events[i]
         stim_value = raw.copy().pick_channels(['stim']).get_data()[0][event_sample]
         Trials[i, :, :] = Arr2D
@@ -132,52 +136,20 @@ for y in stim_channel_values:
         i +=1
     x+=1
 
-#Class = Class[1:i]
-print("Class: ", Class)
-# Plotting the first trial
-#trial_to_plot = 0
+#%% --- COMMON SPATIAL PATTERN (CSP) ---
 
-# fig = plt.figure()
-#ax = fig.add_subplot(111, projection='3d')
+C_l = np.mean(Cov[Class == 1, :, :], axis=0)
+C_r = np.sqeez(Cov[Class == 2, :, :], axis=0)
+C_combined = C_l + C_r
 
-# Extracting x, y, and z coordinates from Trials
-#x = range(nbSec * fs)
-#y = range(len(raw.ch_names) - 4)
-#X, Y = np.meshgrid(x, y)
-#Z = Trials[trial_to_plot, :, :]
+print("C_l Shape:", C_l.shape)
 
-# Plotting the surface
-#ax.plot_surface(X, Y, Z, cmap='viridis')
+V, D = np.linalg.eig(C_l @ np.linalg.pinv(C_combined))
+d, ind = np.argsort(np.diag(D))
+Vs = V[:, ind]
+W_left = Vs[:, 0].T
+W_right = Vs[:, -1].T
 
-#ax.set_xlabel('Time (s)')
-#ax.set_ylabel('Electrodes')
-#ax.set_zlabel('Amplitude')
-
-#plt.title(f'Trial {trial_to_plot + 1}')
-#plt.show()
-
-#Trials = Trials[1:i,:,:]
-
-## COMMON SPATIAL PATTERN (CSP)
-
-#Cov = Cov[1:i, :,:]
-print("Cov Shape: ", Cov.shape)
-
-#C_l = np.squeeze(np.mean(Cov[Class == 1, :, :], axis=0))
-#C_r = np.sqeez(Cov[Class == 2, :, :], axis=0)
-#C_combined = C_l + C_r
-
-#V, D = np.linalg.eig(C_l @ np.linalg.pinv(C_combined))
-#d, ind = np.argsort(np.diag(D))
-#Vs = V[:, ind]
-#W_left = Vs[:, 0].T
-#W_right = Vs[:, -1].T
-
-#For Tongue and Feet
-#C_f = np.mean(Cov[Class == 3, :, :], axis=0)
-#C_f = np.squeeze(C_f)
-#C_t = np.mean(Cov[Class == 4, :, :], axis=0)
-#C_t = np.squeeze(C_t)
 
 
 
