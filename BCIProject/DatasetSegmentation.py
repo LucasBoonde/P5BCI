@@ -144,20 +144,43 @@ print("Arr2D Shape", Arr2D.shape)
 
 #%% --- COMMON SPATIAL PATTERN (CSP) ---
 
-C_right = np.mean(Cov[Class == 1, :, :], keepdims=False)
-C_none = np.mean(Cov[Class == 2, :, :], keepdims=False)
+C_right = np.mean(Cov[Class == 1, :, :], axis=0)
+C_none = np.mean(Cov[Class == 2, :, :], axis=0)
 C_combined = C_right + C_none
 
-print("C_Right Shape:", C_right)
-print("C_None Shape", C_none)
-print("C_combined", C_combined)
+print("C_Right Shape:", C_right.shape)
+print("C_None Shape", C_none.shape)
+print("C_combined", C_combined.shape)
 
 e, V = scipy.linalg.eig(C_right, C_combined)
-d, ind = np.argsort(np.diag(e))
+#print("eigen Vector: ", V)
+#print("eigenvalue: ", e)
+ind = e.argsort()[::-1]
+e = e[ind]
+V = V[ind]
 Vs = V[:, ind]
-W_left = Vs[:, 0].T
-W_right = Vs[:, -1].T
+W_Right = Vs[:, 0]
+W_None = Vs[:, -1]
 
+#print("W_Right: ", W_Right)
+#print("W_None: ", W_None)
+
+color = ['red', 'blue']
+fig, ax = plt.subplots()
+lr_idx = np.any([Class == 1, Class == 2])
+LR_trials = Trials[lr_idx, :, :]
+LR_class = Class[lr_idx]
+#print("LR_Class: ", LR_class)
+
+for t in range(LR_trials.shape[0]):
+    trial = np.squeeze(LR_trials[t, :, :])
+    left_feature = np.var(np.dot(W_Right, trial), axis=0)
+    right_feature = np.var(np.dot(W_None, trial), axis=0)
+    print("Class t: ", int(Class[t]))
+    ax.scatter(np.log(left_feature),np.log(right_feature), s=100, edgecolor ='black',linewidth=1, alpha=0.75 , color=Class, cmap='Greens')
+
+ax.set(xlabel='log(var(w_1 X))', ylabel='log(var(w_2 X))')
+plt.show()
 
 
 
