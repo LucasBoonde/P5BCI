@@ -138,8 +138,8 @@ for y in stim_channel_values:
 
 #%% --- COMMON SPATIAL PATTERN (CSP) ---
 
-C_l = np.mean(Cov[Class == 1, :, :], axis=0)
-C_r = np.sqeez(Cov[Class == 2, :, :], axis=0)
+C_l = np.sqeez(np.mean(Cov[Class == 1, :, :], axis=0))
+C_r = np.sqeez(np.mean(Cov[Class == 2, :, :], axis=0))
 C_combined = C_l + C_r
 
 print("C_l Shape:", C_l.shape)
