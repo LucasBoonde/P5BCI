@@ -30,6 +30,7 @@ warnings.filterwarnings("ignore")
 dataset = BNCI2014_001()
 dataset.subject_list[1]
 
+
 #GENERAL INFORMATION FOR THE DATASET WE ARE USING
 #Number of Subjects = 10
 #Number of Channels = 22 + 3 EOG
@@ -45,6 +46,7 @@ sessions = dataset.get_data(subjects=[1])
 subject = 1
 session_name = "0train"
 run_name = "0"
+
 
 #Get the raw data from all 22 channels and plots them
 raw = sessions[subject][session_name][run_name]
@@ -88,7 +90,7 @@ nbSubjects = 10
 #len(raw.ch_names)-4 fordi vi kun bruger EEG Channels, men kan ændres senere.
 Trials = np.zeros((nbTrials, len(raw.ch_names)-4, nbSec*fs))
 #Defines what stim has been given to the subject
-Class = np.zeros((nbTrials, 1))
+Class = np.zeros((nbTrials,))
 
 
 Cov = np.zeros((nbTrials, nbElectrodes, nbElectrodes))
@@ -132,20 +134,26 @@ for y in stim_channel_values:
             Class[i] = stim_value[0]
         else:
             Class[i] = 2
-        Cov[i, :, :] = np.cov(Arr2D[:, x:(x + (nbSec * fs))])
+
+        Cov[i, :, :] = np.cov(Arr2D)
         i +=1
     x+=1
 
+#print("COVARIANCE MATRIX SHAPE", Cov)
+print("Arr2D Shape", Arr2D.shape)
+
 #%% --- COMMON SPATIAL PATTERN (CSP) ---
 
-C_l = np.sqeez(np.mean(Cov[Class == 1, :, :], axis=0))
-C_r = np.sqeez(np.mean(Cov[Class == 2, :, :], axis=0))
-C_combined = C_l + C_r
+C_right = np.mean(Cov[Class == 1, :, :], keepdims=False)
+C_none = np.mean(Cov[Class == 2, :, :], keepdims=False)
+C_combined = C_right + C_none
 
-print("C_l Shape:", C_l.shape)
+print("C_Right Shape:", C_right)
+print("C_None Shape", C_none)
+print("C_combined", C_combined)
 
-V, D = np.linalg.eig(C_l @ np.linalg.pinv(C_combined))
-d, ind = np.argsort(np.diag(D))
+e, V = scipy.linalg.eig(C_right, C_combined)
+d, ind = np.argsort(np.diag(e))
 Vs = V[:, ind]
 W_left = Vs[:, 0].T
 W_right = Vs[:, -1].T

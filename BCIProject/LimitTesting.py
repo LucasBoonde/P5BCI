@@ -1,8 +1,17 @@
 import numpy as np
+import scipy.io
+import moabb
+from moabb.datasets import BNCI2014_001
 
-arr1 = np.array([1,2,3,4,5,6,7,8,9,10])
 
-arr2 = arr1[2:5]
+arr1 = np.array([[[0],[1],[2]]])
+print("Shape", arr1.shape)
 
-print(arr1)
-print(arr2)
+sqeezed = np.squeeze(arr1, axis=0)
+print("Squeeze Axis 0", sqeezed.shape)
+
+#sqeezed = np.squeeze(arr1, axis=1)
+#print("Squeeze Axis 1", arr1.shape)
+
+sqeezed = np.squeeze(arr1, axis=2)
+print("Squeeze Axis 2", sqeezed.shape)
