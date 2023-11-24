@@ -148,10 +148,6 @@ C_right = np.mean(Cov[Class == 1, :, :], axis=0)
 C_none = np.mean(Cov[Class == 2, :, :], axis=0)
 C_combined = C_right + C_none
 
-print("C_Right Shape:", C_right.shape)
-print("C_None Shape", C_none.shape)
-print("C_combined", C_combined.shape)
-
 e, V = scipy.linalg.eig(C_right, C_combined)
 #print("eigen Vector: ", V)
 #print("eigenvalue: ", e)
@@ -162,26 +158,25 @@ Vs = V[:, ind]
 W_Right = Vs[:, 0]
 W_None = Vs[:, -1]
 
-#print("W_Right: ", W_Right)
-#print("W_None: ", W_None)
+#%% -- Plot CSP Features --
 
-color = ['red', 'blue']
 fig, ax = plt.subplots()
-lr_idx = np.any([Class == 1, Class == 2])
+lr_idx = np.any([Class == 1])
 LR_trials = Trials[lr_idx, :, :]
-LR_class = Class[lr_idx]
-#print("LR_Class: ", LR_class)
 
-for t in range(LR_trials.shape[0]):
-    trial = np.squeeze(LR_trials[t, :, :])
-    left_feature = np.var(np.dot(W_Right, trial), axis=0)
-    right_feature = np.var(np.dot(W_None, trial), axis=0)
-    print("Class t: ", int(Class[t]))
-    ax.scatter(np.log(left_feature),np.log(right_feature), s=100, edgecolor ='black',linewidth=1, alpha=0.75 , color=Class, cmap='Greens')
+
+trial = np.squeeze(LR_trials)
+right_feature = np.var(np.dot(W_Right, trial), axis=1)
+none_feature = np.var(np.dot(W_None, trial), axis=1)
+print("LR_Trials Shape: ", LR_trials.shape)
+colors = Class
+
+plt.scatter(np.log(right_feature), np.log(none_feature), s=100, c=colors, cmap='bwr_r')
 
 ax.set(xlabel='log(var(w_1 X))', ylabel='log(var(w_2 X))')
 plt.show()
 
+#%% -- LDA Classification --
 
 
 

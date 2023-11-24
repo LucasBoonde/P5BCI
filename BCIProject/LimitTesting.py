@@ -1,17 +1,15 @@
 import numpy as np
 import scipy.io
-import moabb
-from moabb.datasets import BNCI2014_001
+import matplotlib.pyplot as plt
+
+arr1 = np.array([1,2,3,4,5,6,7,8,9,10])
+arr2 = np.array([10,9,8,7,6,5,4,3,2,1])
+color = np.array([1,2,2,2,2,1,1,2,2,1])
+
+plt.scatter(arr1, arr2, c=color, cmap='bwr_r')
+plt.show()
 
 
-arr1 = np.array([[[0],[1],[2]]])
-print("Shape", arr1.shape)
 
-sqeezed = np.squeeze(arr1, axis=0)
-print("Squeeze Axis 0", sqeezed.shape)
 
-#sqeezed = np.squeeze(arr1, axis=1)
-#print("Squeeze Axis 1", arr1.shape)
 
-sqeezed = np.squeeze(arr1, axis=2)
-print("Squeeze Axis 2", sqeezed.shape)
