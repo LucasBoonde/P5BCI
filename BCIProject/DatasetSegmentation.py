@@ -160,6 +160,8 @@ W_None = Vs[:, -1]
 
 #%% -- Plot CSP Features --
 
+
+
 fig, ax = plt.subplots()
 lr_idx = np.any([Class == 1])
 LR_trials = Trials[lr_idx, :, :]
@@ -177,7 +179,6 @@ ax.set(xlabel='log(var(w_1 X))', ylabel='log(var(w_2 X))')
 plt.show()
 
 #%% -- LDA Classification --
-
 
 
 
