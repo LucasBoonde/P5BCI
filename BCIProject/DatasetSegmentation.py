@@ -179,6 +179,52 @@ ax.set(xlabel='log(var(w_1 X))', ylabel='log(var(w_2 X))')
 plt.show()
 
 #%% -- LDA Classification --
+def CSP(C1, C2):
+    e, V = scipy.linalg.eig(C1 + C1+C2)
+    ind = e.argsort()[::-1]
+    e = e[ind]
+    V = V[ind]
+    Vs = V[:, ind]
+    W = np.zeros(2, C1.shape[0])
+    W[0,:] = Vs[:, 0].T
+    W[1,:] = Vs[:, -1].T
+    return W
+
+def CSP_Features(X, W):
+    F = np.zeros((X.shape[0], W.shape[0]))
+
+    for trial in range(X.shape[0]):
+        csp_filtered = np.dot(W , np.squeeze(X[trial, :, :]))
+        F[trial, :] = np.log(np.var(csp_filtered, axis=1, ddof=0))
+    return F
 
 
+lr_idx = np.any([Class == 1, Class == 2])
+LR_trials = Trials[lr_idx, :, :]
+#print("LR_trials: ", LR_trials)
+LR_class = Class[lr_idx]
+LR_CovMat = Cov[lr_idx, :, :]
 
+N = LR_trials.shape[1]
+#print("N Size: ", N)
+
+ConfusionMatrix = np.zeros([2,2])
+
+for test_idx in range(1,N):
+    train_idx = list(range(1, test_idx-1) + list(range(test_idx + 1, N)))
+    train_cov = LR_CovMat[test_idx-1, :, :]
+    training_class = LR_class[train_idx] - 1
+    W_csp = CSP(np.mean(train_cov[training_class==1,:,:]), np.mean(train_cov[training_class==2,:,:]))
+    F_csp = CSP_Features(LR_trials[train_idx,:,1000],W_csp)
+
+    #LDA
+    lda = LDA.fit(F_csp,training_class)
+
+    test_features = CSP_Features(LR_trials[test_idx,:,1000], W_csp)
+    prediction = LDA.predict(lda,test_features)
+
+    test_class = LR_class[test_idx]
+    ConfusionMatrix[prediction,test_class] = ConfusionMatrix[prediction,test_class]+1
+
+Accuracy = sum(np.diag(ConfusionMatrix))/sum(sum(ConfusionMatrix))
+print("Accuracy: ", Accuracy)
