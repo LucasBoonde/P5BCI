@@ -180,12 +180,14 @@ plt.show()
 
 #%% -- LDA Classification --
 def CSP(C1, C2):
-    e, V = scipy.linalg.eig(C1 + C1+C2)
+    print("C1", C1.shape)
+    print("C2", C2.shape)
+    e, V = scipy.linalg.eig(C1 , C1+C2)
     ind = e.argsort()[::-1]
     e = e[ind]
     V = V[ind]
     Vs = V[:, ind]
-    W = np.zeros(2, C1.shape[0])
+    W = np.zeros((2, C1.shape[0]))
     W[0,:] = Vs[:, 0].T
     W[1,:] = Vs[:, -1].T
     return W
@@ -200,10 +202,12 @@ def CSP_Features(X, W):
 
 
 lr_idx = np.any([Class == 1, Class == 2])
-LR_trials = Trials[lr_idx, :, :]
-#print("LR_trials: ", LR_trials)
-LR_class = Class[lr_idx]
-LR_CovMat = Cov[lr_idx, :, :]
+LR_trials = Trials[lr_idx, :, :].reshape((48,22,1000))
+print("LR_trials: ", LR_trials.shape)
+LR_class = Class[lr_idx].reshape((48,))
+print("LR Class: ", LR_class.shape)
+LR_CovMat = Cov[lr_idx, :, :].reshape((48,22,22))
+print("LR Cov", LR_CovMat.shape)
 
 N = LR_trials.shape[1]
 #print("N Size: ", N)
@@ -211,17 +215,22 @@ N = LR_trials.shape[1]
 ConfusionMatrix = np.zeros([2,2])
 
 for test_idx in range(1,N):
-    train_idx = list(range(1, test_idx-1) + list(range(test_idx + 1, N)))
-    train_cov = LR_CovMat[test_idx-1, :, :]
-    training_class = LR_class[train_idx] - 1
-    W_csp = CSP(np.mean(train_cov[training_class==1,:,:]), np.mean(train_cov[training_class==2,:,:]))
-    F_csp = CSP_Features(LR_trials[train_idx,:,1000],W_csp)
+    train_idx = np.ones((48,),dtype=bool)#(range(1, test_idx-1)) + list(range(test_idx + 1, N))
+    train_idx[test_idx] = False
+    train_cov = LR_CovMat[train_idx, :, :]
+    training_class = LR_class[train_idx]
 
+    W_csp = CSP(np.mean(train_cov[training_class==1,:,:],axis=0), np.mean(train_cov[training_class==2,:,:],axis=0))
+    F_csp = CSP_Features(LR_trials[train_idx,:,:],W_csp)
+
+
+    print("F_csp: ", F_csp.shape)
+    print("training Class: ", training_class.shape)
     #LDA
     lda = LDA.fit(F_csp,training_class)
 
-    test_features = CSP_Features(LR_trials[test_idx,:,1000], W_csp)
-    prediction = LDA.predict(lda,test_features)
+    test_features = CSP_Features(LR_trials[test_idx,:,:], W_csp)
+    prediction = lda.predict(test_features)
 
     test_class = LR_class[test_idx]
     ConfusionMatrix[prediction,test_class] = ConfusionMatrix[prediction,test_class]+1
