@@ -237,13 +237,16 @@ for test_idx in range(1,N):
     print("training Class: ", training_class.shape)
     #LDA
     lda = LDA().fit(F_csp,training_class)
-    #lda = LDA.fit(F_csp,training_class)
-
     test_features = CSP_Features(LR_trials_reshaped[test_idx,:,:], W_csp)
     prediction = lda.predict(test_features)
 
+    y_pred = lda.predict()
     test_class = LR_class[test_idx]
     ConfusionMatrix[prediction,test_class] = ConfusionMatrix[prediction,test_class]+1
 
+score = lda.score(F_csp,training_class)
+print("SCORE: ",score)
+
 Accuracy = sum(np.diag(ConfusionMatrix))/sum(sum(ConfusionMatrix))
 print("Accuracy: ", Accuracy)
+
