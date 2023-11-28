@@ -164,7 +164,7 @@ W_None = Vs[:, -1]
 
 fig, ax = plt.subplots()
 lr_idx = np.any([Class == 1])
-LR_trials = Trials[lr_idx, :, :]
+LR_trials = Trials[lr_idx, :, :].reshape((48,22,1000))
 
 
 trial = np.squeeze(LR_trials)
@@ -196,40 +196,50 @@ def CSP_Features(X, W):
     F = np.zeros((X.shape[0], W.shape[0]))
 
     for trial in range(X.shape[0]):
-        csp_filtered = np.dot(W , np.squeeze(X[trial, :, :]))
-        F[trial, :] = np.log(np.var(csp_filtered, axis=1, ddof=0))
+        csp_filtered = np.dot(W, np.squeeze(X[trial,:,:]))
+        print("X[trial,:,:]: ", X[trial,:,:].shape)
+        print("csp filtered", csp_filtered.shape)
+        F[trial, :] = np.log(np.var(csp_filtered, axis=1))
+        print("LR_trials[test_idx,:,:]", LR_trials[test_idx, :, :].shape)
+        print("W shape:", W.shape)
+        print("X shape:", X.shape)
+        print("X[trial] shape:", X[trial].shape)
+
     return F
 
-
 lr_idx = np.any([Class == 1, Class == 2])
-LR_trials = Trials[lr_idx, :, :].reshape((48,22,1000))
+LR_trials_reshaped = Trials[lr_idx, :, :].reshape((48,22,1000))
 print("LR_trials: ", LR_trials.shape)
 LR_class = Class[lr_idx].reshape((48,))
 print("LR Class: ", LR_class.shape)
 LR_CovMat = Cov[lr_idx, :, :].reshape((48,22,22))
 print("LR Cov", LR_CovMat.shape)
 
-N = LR_trials.shape[1]
+
+N = LR_trials.shape[0]
 #print("N Size: ", N)
 
 ConfusionMatrix = np.zeros([2,2])
 
 for test_idx in range(1,N):
-    train_idx = np.ones((48,),dtype=bool)#(range(1, test_idx-1)) + list(range(test_idx + 1, N))
+    train_idx = np.ones((48,),dtype=bool)
     train_idx[test_idx] = False
     train_cov = LR_CovMat[train_idx, :, :]
     training_class = LR_class[train_idx]
 
     W_csp = CSP(np.mean(train_cov[training_class==1,:,:],axis=0), np.mean(train_cov[training_class==2,:,:],axis=0))
-    F_csp = CSP_Features(LR_trials[train_idx,:,:],W_csp)
+    print("W_csp", W_csp.shape)
+    print("LR_trials shape:", LR_trials_reshaped.shape)
+    F_csp = CSP_Features(LR_trials_reshaped[train_idx,:,:],W_csp)
 
 
     print("F_csp: ", F_csp.shape)
     print("training Class: ", training_class.shape)
     #LDA
-    lda = LDA.fit(F_csp,training_class)
+    lda = LDA().fit(F_csp,training_class)
+    #lda = LDA.fit(F_csp,training_class)
 
-    test_features = CSP_Features(LR_trials[test_idx,:,:], W_csp)
+    test_features = CSP_Features(LR_trials_reshaped[test_idx,:,:], W_csp)
     prediction = lda.predict(test_features)
 
     test_class = LR_class[test_idx]
