@@ -22,6 +22,7 @@ from moabb.paradigms import LeftRightImagery
 np.set_printoptions(threshold=sys.maxsize)
 
 
+
 #%% --- Setup for MOABB ---
 moabb.set_log_level("info")
 warnings.filterwarnings("ignore")
@@ -214,6 +215,7 @@ LR_class = Class[lr_idx].reshape((48,))
 print("LR Class: ", LR_class.shape)
 LR_CovMat = Cov[lr_idx, :, :].reshape((48,22,22))
 print("LR Cov", LR_CovMat.shape)
+
 
 
 N = LR_trials.shape[0]
