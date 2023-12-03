@@ -44,12 +44,16 @@ raw = sessions[subject][session_name][run_name]
 raw.filter(l_freq=0.5, h_freq=30, filter_length='auto', phase='zero')
 
 events = mne.find_events(raw, stim_channel="stim")
+
+print("raw info", raw.info)
+
+
 #events, _ = events_from_annotations(raw, event_id=dict(T1=2, T2=3))
 #print("events", events[:20]) # shows the first 20 stims
 
 event_dict = {"tongue":4, "feet":3, "right_hand":2, "left_hand":1}
 
-#fig = mne.viz.plot_events(events, event_id=event_dict, sfreq=raw.info["sfreq"], first_samp=raw.first_samp) #Shows the stim events and id's
+fig = mne.viz.plot_events(events, event_id=event_dict, sfreq=raw.info["sfreq"], first_samp=raw.first_samp) #Shows the stim events and id's
 
 picks = pick_types(raw.info, meg=False, eeg=True, stim=False, eog=False, exclude="bads")
 
@@ -79,7 +83,7 @@ cv_split = cv.split(epochs_data_train)
 
 #The Classifier
 lda = LinearDiscriminantAnalysis()
-csp = CSP(n_components=4, reg=None, log=True, norm_trace=False)
+csp = CSP(n_components=2, reg=None, log=True, norm_trace=False)
 
 #Cross Validation using Scikit-learn Pipeline:
 clf = Pipeline([("CSP", csp), ("LDA", lda)])
@@ -141,3 +145,5 @@ plt.ylabel("classification accuracy")
 plt.title("Classification score over time")
 plt.legend(loc="lower right")
 plt.show()
+
+
