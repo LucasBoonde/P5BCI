@@ -60,7 +60,7 @@ picks = pick_types(raw.info, meg=False, eeg=True, stim=False, eog=False, exclude
 epochs = Epochs(
     raw,
     events,
-    event_id=event_dict,
+    event_id=2,
     tmin=tmin,
     tmax=tmax,
     proj=True,

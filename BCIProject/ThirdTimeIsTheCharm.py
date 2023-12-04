@@ -52,10 +52,9 @@ events = mne.find_events(raw, stim_channel="stim")
 
 
 
-#event_dict = {"right_hand":2, "left_hand":1}
 event_dict = {"tongue":4, "feet":3, "right_hand":2, "left_hand":1}
+print("Event values", events==event_dict.values())
 
-print(events[0][2])
 picks = pick_types(raw.info, meg=False, eeg=True, stim=False, eog=False, exclude="bads")
 
 #Showing the picked epochs
@@ -84,8 +83,10 @@ print("epochs_data Shape: ", epochs_data.shape)
 
 #Show the trials for one channel (Just as as test to see if there are any similar data)
 #fig, ax = plt.subplots(layout="constrained")
-plt.scatter(epochs_data[0,7,:], epochs_data[0,7,:])
-plt.scatter(epochs_data[0,11,:], epochs_data[0,11,:])
+rightHand = event_dict.values()
+
+plt.plot(epochs_data[events[:,2]==2,7,:], linewidth = 0.5)
+#plt.scatter(epochs_data[0,11,:], epochs_data[0,11,:])
 plt.xlabel('Samples')
 plt.ylabel('Channel C3 for 48 trials')
 plt.show()

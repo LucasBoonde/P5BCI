@@ -58,7 +58,7 @@ plt.show()
 #%%--- Bandpass Filtering---:
 
 #Ved ikke om dette ændrer data senere i for-loopet, eller om man bare bruger raw data igen?
-raw.filter(l_freq=0.5, h_freq=30, filter_length='auto', phase='zero')
+raw.filter(l_freq=7, h_freq=30, filter_length='auto', phase='zero')
 raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
 
 plt.show()
@@ -123,28 +123,51 @@ stim has been given and Cov matrix that will be used for Common Spatial Pattern"
 
 for y in stim_channel_values:
     if y != threshold:
+        event_sample = events[i]
+        stim_value = raw.copy().pick_channels(['stim']).get_data()[0][event_sample]
         for z in range(nbElectrodes):
             currentChannel = raw.ch_names[z]
             trialData = raw.copy().pick_channels([currentChannel])
-            channelData = trialData.get_data(start=x, stop=x+(nbSec * fs))
+            if stim_value[0] == 3:
+                channelData = trialData.get_data(start=x, stop=x+(nbSec * fs))
+            if i == 0:
+                channelData = trialData.get_data(start=x-250, stop=x+750)
+            else:
+                channelData = trialData.get_data(start=x-(nbSec * fs), stop=x)
+
             Arr2D[z, :] = channelData
-        event_sample = events[i]
-        stim_value = raw.copy().pick_channels(['stim']).get_data()[0][event_sample]
         Trials[i, :, :] = Arr2D
-        if stim_value[0] == 1:
-            Class[i] = stim_value[0]
+        if stim_value[0] == 3:
+            Class[i] = 1
         else:
             Class[i] = 2
 
         Cov[i, :, :] = np.cov(Arr2D)
         i +=1
     x+=1
+print("Class Variables", Class)
+print("Trials Shape: ", Trials.shape)
 
+#Plotting the Trials of Right hand movement for channel C3
+#plt.plot(Trials[Class==1,7,: ], linewidth=0.5)
+selected_trials = Trials[Class == 1, 0, :]
+num_trials = selected_trials.shape[0]
+
+# Plot each trial separately
+for i in range(num_trials):
+    plt.plot(selected_trials[i, :], linewidth=0.5)
+
+plt.title("All Right Hand Trials")
+plt.show()
+print("Selected Trials", selected_trials.shape)
 #print("COVARIANCE MATRIX SHAPE", Cov)
 print("Arr2D Shape", Arr2D.shape)
 
-#%% --- COMMON SPATIAL PATTERN (CSP) ---
+#Feature Extraction
 
+
+
+#%% --- COMMON SPATIAL PATTERN (CSP) ---
 C_right = np.mean(Cov[Class == 1, :, :], axis=0)
 C_none = np.mean(Cov[Class == 2, :, :], axis=0)
 C_combined = C_right + C_none
@@ -195,16 +218,10 @@ def CSP(C1, C2):
 
 def CSP_Features(X, W):
     F = np.zeros((X.shape[0], W.shape[0]))
-
     for trial in range(X.shape[0]):
         csp_filtered = np.dot(W, np.squeeze(X[trial,:,:]))
-        print("X[trial,:,:]: ", X[trial,:,:].shape)
-        print("csp filtered", csp_filtered.shape)
         F[trial, :] = np.log(np.var(csp_filtered, axis=1))
-        print("LR_trials[test_idx,:,:]", LR_trials[test_idx, :, :].shape)
-        print("W shape:", W.shape)
-        print("X shape:", X.shape)
-        print("X[trial] shape:", X[trial].shape)
+
 
     return F
 
@@ -215,7 +232,6 @@ LR_class = Class[lr_idx].reshape((48,))
 print("LR Class: ", LR_class.shape)
 LR_CovMat = Cov[lr_idx, :, :].reshape((48,22,22))
 print("LR Cov", LR_CovMat.shape)
-
 
 
 N = LR_trials.shape[0]
@@ -230,21 +246,17 @@ for test_idx in range(1,N):
     training_class = LR_class[train_idx]
 
     W_csp = CSP(np.mean(train_cov[training_class==1,:,:],axis=0), np.mean(train_cov[training_class==2,:,:],axis=0))
-    print("W_csp", W_csp.shape)
-    print("LR_trials shape:", LR_trials_reshaped.shape)
     F_csp = CSP_Features(LR_trials_reshaped[train_idx,:,:],W_csp)
 
-
-    print("F_csp: ", F_csp.shape)
-    print("training Class: ", training_class.shape)
     #LDA
     lda = LDA().fit(F_csp,training_class)
-    test_features = CSP_Features(LR_trials_reshaped[test_idx,:,:], W_csp)
+    test_features = CSP_Features(LR_trials_reshaped[test_idx,:,:].reshape((1,22,1000)), W_csp)
     prediction = lda.predict(test_features)
 
-    y_pred = lda.predict()
+
+    #y_pred = lda.predict()
     test_class = LR_class[test_idx]
-    ConfusionMatrix[prediction,test_class] = ConfusionMatrix[prediction,test_class]+1
+    ConfusionMatrix[int(prediction[0])-1,int(test_class)-1] = ConfusionMatrix[int(prediction[0])-1,int(test_class)-1]+1
 
 score = lda.score(F_csp,training_class)
 print("SCORE: ",score)
