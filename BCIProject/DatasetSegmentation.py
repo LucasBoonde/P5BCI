@@ -1,20 +1,21 @@
+import random
 import warnings
 
 import matplotlib.pyplot as plt
 import sys
 import mne
+import scipy
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+import numpy as np
+import moabb
+from moabb.datasets import BNCI2014_001
 import pandas as pd
 from scipy.signal import filtfilt
 from scipy import stats
-import scipy
 import seaborn as sns
 from mne.decoding import CSP
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.pipeline import make_pipeline
-import numpy as np
 
-import moabb
-from moabb.datasets import BNCI2014_001
 from moabb.evaluations import WithinSessionEvaluation
 from moabb.paradigms import LeftRightImagery
 
@@ -167,6 +168,8 @@ print("Arr2D Shape", Arr2D.shape)
 
 
 
+
+
 #%% --- COMMON SPATIAL PATTERN (CSP) ---
 C_right = np.mean(Cov[Class == 1, :, :], axis=0)
 C_none = np.mean(Cov[Class == 2, :, :], axis=0)
@@ -183,9 +186,6 @@ W_Right = Vs[:, 0]
 W_None = Vs[:, -1]
 
 #%% -- Plot CSP Features --
-
-
-
 fig, ax = plt.subplots()
 lr_idx = np.any([Class == 1])
 LR_trials = Trials[lr_idx, :, :].reshape((48,22,1000))
@@ -194,7 +194,7 @@ LR_trials = Trials[lr_idx, :, :].reshape((48,22,1000))
 trial = np.squeeze(LR_trials)
 right_feature = np.var(np.dot(W_Right, trial), axis=1)
 none_feature = np.var(np.dot(W_None, trial), axis=1)
-print("LR_Trials Shape: ", LR_trials.shape)
+#print("LR_Trials Shape: ", LR_trials.shape)
 colors = Class
 
 plt.scatter(np.log(right_feature), np.log(none_feature), s=100, c=colors, cmap='bwr_r')
@@ -204,8 +204,8 @@ plt.show()
 
 #%% -- LDA Classification --
 def CSP(C1, C2):
-    print("C1", C1.shape)
-    print("C2", C2.shape)
+    #print("C1", C1.shape)
+    #print("C2", C2.shape)
     e, V = scipy.linalg.eig(C1 , C1+C2)
     ind = e.argsort()[::-1]
     e = e[ind]
@@ -227,11 +227,11 @@ def CSP_Features(X, W):
 
 lr_idx = np.any([Class == 1, Class == 2])
 LR_trials_reshaped = Trials[lr_idx, :, :].reshape((48,22,1000))
-print("LR_trials: ", LR_trials.shape)
+#print("LR_trials: ", LR_trials.shape)
 LR_class = Class[lr_idx].reshape((48,))
-print("LR Class: ", LR_class.shape)
+#print("LR Class: ", LR_class.shape)
 LR_CovMat = Cov[lr_idx, :, :].reshape((48,22,22))
-print("LR Cov", LR_CovMat.shape)
+#print("LR Cov", LR_CovMat.shape)
 
 
 N = LR_trials.shape[0]
@@ -239,7 +239,7 @@ N = LR_trials.shape[0]
 
 ConfusionMatrix = np.zeros([2,2])
 
-for test_idx in range(1,N):
+for test_idx in range(0,N):
     train_idx = np.ones((48,),dtype=bool)
     train_idx[test_idx] = False
     train_cov = LR_CovMat[train_idx, :, :]
@@ -251,6 +251,7 @@ for test_idx in range(1,N):
     #LDA
     lda = LDA().fit(F_csp,training_class)
     test_features = CSP_Features(LR_trials_reshaped[test_idx,:,:].reshape((1,22,1000)), W_csp)
+    #print("Test Features: ",test_features)
     prediction = lda.predict(test_features)
 
 
@@ -263,4 +264,54 @@ print("SCORE: ",score)
 
 Accuracy = sum(np.diag(ConfusionMatrix))/sum(sum(ConfusionMatrix))
 print("Accuracy: ", Accuracy)
+
+
+
+
+# -- Predicting Random Tral --:
+
+BCIActive = False
+ClassifyingRate = 0.5
+TimeToClassify = 0
+ClassifyCount = 0
+nrOfNoMovement = 0
+nrOfRightMovement=0
+
+
+while BCIActive!=True:
+    test_idx = random.randint(0, N-1)
+    train_idx = np.ones((48,), dtype=bool)
+    train_idx[test_idx] = False
+    train_cov = LR_CovMat[train_idx, :, :]
+    training_class = LR_class[train_idx]
+
+    W_csp = CSP(np.mean(train_cov[training_class == 1, :, :], axis=0),
+                np.mean(train_cov[training_class == 2, :, :], axis=0))
+    F_csp = CSP_Features(LR_trials_reshaped[train_idx, :, :], W_csp)
+
+    # LDA
+    lda = LDA().fit(F_csp, training_class)
+    test_features = CSP_Features(LR_trials_reshaped[test_idx, :, :].reshape((1, 22, 1000)), W_csp)
+    # print("Test Features: ",test_features)
+    prediction = lda.predict(test_features)
+
+    #Predict the current Class:
+    prediction = lda.predict(test_features)
+    print("Prediction: ", prediction)
+    if prediction == int(1):
+        print("Classifier Has Predicted a Movement")
+        # Maybe print the actual label for that trial if possible
+        # Send The confirm action to the robot.
+        nrOfRightMovement += 1
+        BCIActive = True
+
+    else:
+        print("You seem to be idle")
+        nrOfNoMovement += 1
+    ClassifyCount +=1
+    print("Test Index:" , test_idx)
+    print("Classifying loop nr: ", ClassifyCount)
+    print("No movements detected: ", nrOfNoMovement)
+    print("Right Hand Movement Classified", nrOfRightMovement)
+
 
