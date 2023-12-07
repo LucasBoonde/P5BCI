@@ -59,7 +59,7 @@ plt.show()
 #%%--- Bandpass Filtering---:
 
 #Ved ikke om dette ændrer data senere i for-loopet, eller om man bare bruger raw data igen?
-raw.filter(l_freq=7, h_freq=30, filter_length='auto', phase='zero')
+raw.filter(l_freq=2, h_freq=30, filter_length='auto', phase='zero')
 raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
 
 plt.show()
@@ -126,15 +126,19 @@ for y in stim_channel_values:
     if y != threshold:
         event_sample = events[i]
         stim_value = raw.copy().pick_channels(['stim']).get_data()[0][event_sample]
+        #print("Stimvalue: ", stim_value[0])
         for z in range(nbElectrodes):
             currentChannel = raw.ch_names[z]
             trialData = raw.copy().pick_channels([currentChannel])
+
             if stim_value[0] == 3:
                 channelData = trialData.get_data(start=x, stop=x+(nbSec * fs))
+                #print("Right Hand:")
             if i == 0:
                 channelData = trialData.get_data(start=x-250, stop=x+750)
-            else:
+            elif i != 0 and stim_value[0]!=3:
                 channelData = trialData.get_data(start=x-(nbSec * fs), stop=x)
+                #print("Not Right Hand")
 
             Arr2D[z, :] = channelData
         Trials[i, :, :] = Arr2D
@@ -151,14 +155,22 @@ print("Trials Shape: ", Trials.shape)
 
 #Plotting the Trials of Right hand movement for channel C3
 #plt.plot(Trials[Class==1,7,: ], linewidth=0.5)
-selected_trials = Trials[Class == 1, 0, :]
+selected_trials = Trials[Class == 1, 7, :]
+num_trials = selected_trials.shape[0]
+
+# Calculate the mean across all trials
+mean_trial = np.mean(selected_trials, axis=0)
+
+# Number of trials
 num_trials = selected_trials.shape[0]
 
 # Plot each trial separately
 for i in range(num_trials):
-    plt.plot(selected_trials[i, :], linewidth=0.5)
+    plt.plot(selected_trials[i, :], linewidth=0.5, color='gray')
 
-plt.title("All Right Hand Trials")
+# Plot the mean trial in red with a thicker line
+plt.plot(mean_trial, linewidth=2, color='red', label='Mean Trial')
+plt.title("All Right Hand Trials for Channel 'C3'")
 plt.show()
 print("Selected Trials", selected_trials.shape)
 #print("COVARIANCE MATRIX SHAPE", Cov)
