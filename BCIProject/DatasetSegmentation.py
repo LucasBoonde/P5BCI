@@ -18,6 +18,7 @@ from sklearn.pipeline import make_pipeline
 
 from moabb.evaluations import WithinSessionEvaluation
 from moabb.paradigms import LeftRightImagery
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 #Just prints the whole array instead of [x, y, ... , x, y]
 np.set_printoptions(threshold=sys.maxsize)
@@ -47,22 +48,22 @@ dataset.subject_list[1]
 sessions = dataset.get_data(subjects=[1])
 subject = 1
 session_name = "0train"
-run_name = "0"
+run_name = "2"
 
 
 #Get the raw data from all 22 channels and plots them
 raw = sessions[subject][session_name][run_name]
-raw.plot(n_channels=len(raw.ch_names), title='EEG data - Subject {}, Session {}, Run {}'.format(subject, session_name, run_name))
-plt.show()
+#raw.plot(n_channels=len(raw.ch_names), title='EEG data - Subject {}, Session {}, Run {}'.format(subject, session_name, run_name))
+#plt.show()
 
 
 #%%--- Bandpass Filtering---:
 
 #Ved ikke om dette ændrer data senere i for-loopet, eller om man bare bruger raw data igen?
 raw.filter(l_freq=2, h_freq=30, filter_length='auto', phase='zero')
-raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
+#raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
 
-plt.show()
+#plt.show()
 
 
 #%% --- Extracting Individual Trials ---
@@ -165,13 +166,13 @@ mean_trial = np.mean(selected_trials, axis=0)
 num_trials = selected_trials.shape[0]
 
 # Plot each trial separately
-for i in range(num_trials):
-    plt.plot(selected_trials[i, :], linewidth=0.5, color='gray')
+#for i in range(num_trials):
+#    plt.plot(selected_trials[i, :], linewidth=0.5, color='gray')
 
 # Plot the mean trial in red with a thicker line
-plt.plot(mean_trial, linewidth=2, color='red', label='Mean Trial')
-plt.title("All Right Hand Trials for Channel 'C3'")
-plt.show()
+#plt.plot(mean_trial, linewidth=2, color='red', label='Mean Trial')
+#plt.title("All Right Hand Trials for Channel 'C3'")
+#plt.show()
 print("Selected Trials", selected_trials.shape)
 #print("COVARIANCE MATRIX SHAPE", Cov)
 print("Arr2D Shape", Arr2D.shape)
@@ -182,7 +183,7 @@ print("Arr2D Shape", Arr2D.shape)
 
 
 
-#%% --- COMMON SPATIAL PATTERN (CSP) ---
+#%% --- COMMON SPATIAL PATTERNS (CSP) ---
 C_right = np.mean(Cov[Class == 1, :, :], axis=0)
 C_none = np.mean(Cov[Class == 2, :, :], axis=0)
 C_combined = C_right + C_none
@@ -211,7 +212,7 @@ colors = Class
 
 plt.scatter(np.log(right_feature), np.log(none_feature), s=100, c=colors, cmap='bwr_r')
 
-ax.set(xlabel='log(var(w_1 X))', ylabel='log(var(w_2 X))')
+ax.set(xlabel='log(var(W_Right))', ylabel='log(var(W_None))')
 plt.show()
 
 #%% -- LDA Classification --
@@ -229,13 +230,13 @@ def CSP(C1, C2):
     return W
 
 def CSP_Features(X, W):
-    F = np.zeros((X.shape[0], W.shape[0]))
+    F = np.zeros((X.shape[0], W.shape[0])) # X.shape[0] = amount of trials;  W has two variables, one for the largest variance and one for the smallest.
     for trial in range(X.shape[0]):
-        csp_filtered = np.dot(W, np.squeeze(X[trial,:,:]))
+        csp_filtered = np.dot(W, np.squeeze(X[trial,:,:]))# Tager vores X = [47,22,1000] og Fjerner singleton dimensionen efter den er prikket så X = [22,1000]; csp_filtered = [2,1000]
         F[trial, :] = np.log(np.var(csp_filtered, axis=1))
 
-
     return F
+
 
 lr_idx = np.any([Class == 1, Class == 2])
 LR_trials_reshaped = Trials[lr_idx, :, :].reshape((48,22,1000))
@@ -247,11 +248,14 @@ LR_CovMat = Cov[lr_idx, :, :].reshape((48,22,22))
 
 
 N = LR_trials.shape[0]
-#print("N Size: ", N)
+print("Shape of N: ",N)
 
 ConfusionMatrix = np.zeros([2,2])
+predicted_class = [0] * N
+actual_class = [0]*N
 
-for test_idx in range(0,N):
+
+for test_idx in range(N):
     train_idx = np.ones((48,),dtype=bool)
     train_idx[test_idx] = False
     train_cov = LR_CovMat[train_idx, :, :]
@@ -270,14 +274,32 @@ for test_idx in range(0,N):
     #y_pred = lda.predict()
     test_class = LR_class[test_idx]
     ConfusionMatrix[int(prediction[0])-1,int(test_class)-1] = ConfusionMatrix[int(prediction[0])-1,int(test_class)-1]+1
+    predicted_class[test_idx] = int(prediction[0])-1
+    actual_class[test_idx] = int(LR_class[test_idx])-1
 
-score = lda.score(F_csp,training_class)
+score = lda.score(F_csp,training_class) # Denne tæller ud fra at der er 47 trials?
 print("SCORE: ",score)
 
-Accuracy = sum(np.diag(ConfusionMatrix))/sum(sum(ConfusionMatrix))
+print("Diagonal For CM: ", np.diag(ConfusionMatrix))
+
+Accuracy = sum(np.diag(ConfusionMatrix))/sum(sum(ConfusionMatrix)) #Denne tæller ud fra at der er 48 trials, hvorfor der er forskel ved jeg ikke.
 print("Accuracy: ", Accuracy)
 
 
+# -- Confusion Matrix ---
+print("predicted_class",predicted_class)
+print("Actual Class: ", actual_class)
+
+classes = ['Right', 'Nothing']
+
+cm = confusion_matrix(actual_class, predicted_class, labels=[0,1])
+
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=classes)
+disp = disp.plot(include_values=True, cmap='Blues', ax=None, xticks_rotation='horizontal')
+plt.title('Confusion Matrix: Run 3')
+plt.tick_params(axis=u'both', which=u'both',length=0)
+plt.grid(False)
+plt.show()
 
 
 # -- Predicting Random Tral --:
@@ -309,21 +331,21 @@ while BCIActive!=True:
 
     #Predict the current Class:
     prediction = lda.predict(test_features)
-    print("Prediction: ", prediction)
+    #print("Prediction: ", prediction)
     if prediction == int(1):
-        print("Classifier Has Predicted a Movement")
+        #print("Classifier Has Predicted a Movement")
         # Maybe print the actual label for that trial if possible
         # Send The confirm action to the robot.
         nrOfRightMovement += 1
         BCIActive = True
 
     else:
-        print("You seem to be idle")
+        #print("You seem to be idle")
         nrOfNoMovement += 1
     ClassifyCount +=1
-    print("Test Index:" , test_idx)
-    print("Classifying loop nr: ", ClassifyCount)
-    print("No movements detected: ", nrOfNoMovement)
-    print("Right Hand Movement Classified", nrOfRightMovement)
+print("Test Index:" , test_idx)
+print("Classifying loop nr: ", ClassifyCount)
+print("No movements detected: ", nrOfNoMovement)
+print("Right Hand Movement Classified", nrOfRightMovement)
 
 
