@@ -10,7 +10,7 @@ import numpy as np
 import moabb
 from moabb.datasets import BNCI2014_001
 import pandas as pd
-from scipy.signal import filtfilt
+from scipy import signal
 from scipy import stats
 import seaborn as sns
 from mne.decoding import CSP
@@ -61,6 +61,10 @@ raw = sessions[subject][session_name][run_name]
 
 #Ved ikke om dette ændrer data senere i for-loopet, eller om man bare bruger raw data igen?
 raw.filter(l_freq=2, h_freq=30, filter_length='auto', phase='zero')
+"""
+sos = scipy.signal.butter(0.5,30, 'bandpass', fs= 250, output='sos')
+"""
+#raw.signal.butter()
 #raw.plot(n_channels=len(raw.ch_names), title='EEG data - After Bandpass Filter')
 
 #plt.show()
@@ -166,13 +170,15 @@ mean_trial = np.mean(selected_trials, axis=0)
 num_trials = selected_trials.shape[0]
 
 # Plot each trial separately
-#for i in range(num_trials):
-#    plt.plot(selected_trials[i, :], linewidth=0.5, color='gray')
+for i in range(num_trials):
+    plt.plot(selected_trials[i, :], linewidth=0.5, color='gray')
 
 # Plot the mean trial in red with a thicker line
-#plt.plot(mean_trial, linewidth=2, color='red', label='Mean Trial')
-#plt.title("All Right Hand Trials for Channel 'C3'")
-#plt.show()
+plt.plot(mean_trial, linewidth=2, color='red', label='Mean Trial')
+plt.title("All Right Hand Trials for Channel 'C3'")
+plt.ylabel("Amplitude in μV")
+plt.xlabel("Samples")
+plt.show()
 print("Selected Trials", selected_trials.shape)
 #print("COVARIANCE MATRIX SHAPE", Cov)
 print("Arr2D Shape", Arr2D.shape)
@@ -200,7 +206,7 @@ W_None = Vs[:, -1]
 
 #%% -- Plot CSP Features --
 fig, ax = plt.subplots()
-lr_idx = np.any([Class == 1])
+lr_idx = np.any([Class == 1, Class == 2])
 LR_trials = Trials[lr_idx, :, :].reshape((48,22,1000))
 
 
