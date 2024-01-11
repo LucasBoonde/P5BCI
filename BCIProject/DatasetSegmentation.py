@@ -262,6 +262,7 @@ actual_class = [0]*N
 
 
 for test_idx in range(N):
+
     train_idx = np.ones((48,),dtype=bool)
     train_idx[test_idx] = False
     train_cov = LR_CovMat[train_idx, :, :]
