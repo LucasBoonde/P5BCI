@@ -1,0 +1,8 @@
+prefix=/home/kasper/catkin_ws/devel
+
+Name: Eyetracking
+Description: Description of Eyetracking
+Version: 0.0.0
+Cflags: -I/home/kasper/catkin_ws/devel/include
+Libs: -L${prefix}/lib 
+Requires: rospy std_msgs

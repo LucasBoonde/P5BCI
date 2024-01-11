@@ -1,0 +1,100 @@
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_78b64/fast && /usr/bin/make -f CMakeFiles/cmTC_78b64.dir/build.make CMakeFiles/cmTC_78b64.dir/build
+make[1]: Entering directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_78b64.dir/src.c.o
+/usr/bin/cc   -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_78b64.dir/src.c.o   -c /home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_78b64
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_78b64.dir/link.txt --verbose=1
+/usr/bin/cc  -DCMAKE_HAVE_LIBC_PTHREAD    -rdynamic CMakeFiles/cmTC_78b64.dir/src.c.o  -o cmTC_78b64 
+/usr/bin/ld: CMakeFiles/cmTC_78b64.dir/src.c.o: in function `main':
+src.c:(.text+0x46): undefined reference to `pthread_create'
+/usr/bin/ld: src.c:(.text+0x52): undefined reference to `pthread_detach'
+/usr/bin/ld: src.c:(.text+0x63): undefined reference to `pthread_join'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_78b64.dir/build.make:87: cmTC_78b64] Error 1
+make[1]: Leaving directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_78b64/fast] Error 2
+
+
+Source file was:
+#include <pthread.h>
+
+void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_49d1c/fast && /usr/bin/make -f CMakeFiles/cmTC_49d1c.dir/build.make CMakeFiles/cmTC_49d1c.dir/build
+make[1]: Entering directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_49d1c.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_49d1c.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_49d1c
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_49d1c.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_49d1c.dir/CheckFunctionExists.c.o  -o cmTC_49d1c  -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_49d1c.dir/build.make:87: cmTC_49d1c] Error 1
+make[1]: Leaving directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_49d1c/fast] Error 2
+
+
+
+Determining if the function sgemm_ exists failed with the following output:
+Change Dir: /home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_b31dc/fast && make[1]: Entering directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTC_b31dc.dir/build.make CMakeFiles/cmTC_b31dc.dir/build
+make[2]: Entering directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_b31dc.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=sgemm_   -o CMakeFiles/cmTC_b31dc.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_b31dc
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b31dc.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=sgemm_    -rdynamic CMakeFiles/cmTC_b31dc.dir/CheckFunctionExists.c.o  -o cmTC_b31dc 
+/usr/bin/ld: CMakeFiles/cmTC_b31dc.dir/CheckFunctionExists.c.o: in function `main':
+CheckFunctionExists.c:(.text+0x14): undefined reference to `sgemm_'
+collect2: error: ld returned 1 exit status
+make[2]: *** [CMakeFiles/cmTC_b31dc.dir/build.make:87: cmTC_b31dc] Error 1
+make[2]: Leaving directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+make[1]: *** [Makefile:121: cmTC_b31dc/fast] Error 2
+make[1]: Leaving directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+
+
+
+Determining if the function cheev_ exists failed with the following output:
+Change Dir: /home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_a33fb/fast && make[1]: Entering directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTC_a33fb.dir/build.make CMakeFiles/cmTC_a33fb.dir/build
+make[2]: Entering directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_a33fb.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=cheev_   -o CMakeFiles/cmTC_a33fb.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_a33fb
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a33fb.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=cheev_    -rdynamic CMakeFiles/cmTC_a33fb.dir/CheckFunctionExists.c.o  -o cmTC_a33fb  /usr/lib/x86_64-linux-gnu/libblas.so 
+/usr/bin/ld: CMakeFiles/cmTC_a33fb.dir/CheckFunctionExists.c.o: in function `main':
+CheckFunctionExists.c:(.text+0x14): undefined reference to `cheev_'
+collect2: error: ld returned 1 exit status
+make[2]: *** [CMakeFiles/cmTC_a33fb.dir/build.make:88: cmTC_a33fb] Error 1
+make[2]: Leaving directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+make[1]: *** [Makefile:121: cmTC_a33fb/fast] Error 2
+make[1]: Leaving directory '/home/kasper/catkin_ws/build/CMakeFiles/CMakeTmp'
+
+
+

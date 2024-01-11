@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/kasper/catkin_ws/devel/setup.sh

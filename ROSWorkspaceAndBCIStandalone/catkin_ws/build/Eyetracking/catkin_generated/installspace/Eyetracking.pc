@@ -1,0 +1,8 @@
+prefix=/home/kasper/catkin_ws/install
+
+Name: Eyetracking
+Description: Description of Eyetracking
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
