@@ -94,18 +94,6 @@ can move on to the next stim sample."""
 
 Arr2D = np.zeros([len(raw.ch_names) - 4, nbSec * fs])
 
-"""OBS: events er basically det samme som stim channel values, så vi gjorde basically det samme to gange, og brugte to forskellige
-variabler i for loopet som var samme værdi. Jeg har fjernet evets og vi bruger derfor kun stim_channel_values. Spring derfor ned til næste kommentar.
-
-A smart thing about the MNE arrays is that they can store extra "footnotes" of string to each value in the 1D MNE array. (Kind of).
-In this case each stimulus sample has a stored value between 1-4 which indicates which class of stimulus was given. So we use an MNE function
-which extracts that information into a 2D array we call events. Basically its a long list of rows with (sample number, 0, class value). We
-don't know why there is a 0 in between but is irrelevant. Since the MNE function events_from_annotation besides storing the data in a variable
-wants to return it to somewhere as well, we use the underscore "_" to just ignore the otherwise returned data from the function.
-
-events, _ = mne.events_from_annotations(raw)"""
-
-
 """This for-loop goes through all the samples for the stim channel,
 and jumps inside a for-loop when a stim (value = 3) is given. 
 The for-loop extracts 1000 samples of each of the 22 EEG channels, and puts them into a 3D array (Trials), 22x1000x48. 48 for the number of trials. 
